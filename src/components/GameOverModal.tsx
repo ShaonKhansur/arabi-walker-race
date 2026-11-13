@@ -37,8 +37,8 @@ export const GameOverModal: React.FC<GameOverModalProps> = ({
   }, [isPlayerWinner]);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-md font-bengali">
-      <div className="bg-gradient-to-b from-slate-900 to-slate-950 border border-sky-500/30 rounded-3xl p-5 md:p-7 max-w-md w-full shadow-2xl relative text-center animate-in fade-in zoom-in-95 duration-200">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 md:p-4 bg-slate-950/85 backdrop-blur-md font-bengali">
+      <div className="bg-gradient-to-b from-slate-900 to-slate-950 border border-sky-500/30 rounded-3xl p-4 md:p-6 max-w-md w-full max-h-[95dvh] overflow-y-auto shadow-2xl relative text-center animate-in fade-in zoom-in-95 duration-200">
         {/* Glow ambient */}
         <div
           className={`absolute -top-20 -right-20 w-44 h-44 rounded-full blur-3xl pointer-events-none ${

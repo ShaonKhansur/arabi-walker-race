@@ -14,8 +14,8 @@ export const ModeSelectModal: React.FC<ModeSelectModalProps> = ({
   onClose,
 }) => {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md font-bengali">
-      <div className="bg-gradient-to-b from-slate-900 to-slate-950 border border-sky-500/30 rounded-3xl p-5 md:p-6 max-w-2xl w-full shadow-2xl relative overflow-hidden text-center animate-in fade-in zoom-in-95 duration-200">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 md:p-4 bg-slate-950/80 backdrop-blur-md font-bengali">
+      <div className="bg-gradient-to-b from-slate-900 to-slate-950 border border-sky-500/30 rounded-3xl p-4 md:p-6 max-w-2xl w-full max-h-[95dvh] overflow-y-auto shadow-2xl relative text-center animate-in fade-in zoom-in-95 duration-200">
         {/* Glow ambient background */}
         <div className="absolute -top-24 -left-24 w-48 h-48 bg-sky-500/20 rounded-full blur-3xl pointer-events-none" />
         <div className="absolute -bottom-24 -right-24 w-48 h-48 bg-amber-500/20 rounded-full blur-3xl pointer-events-none" />

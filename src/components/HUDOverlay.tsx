@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { GameMode, GameStateUpdate } from '../game/GameScene';
 import { SoundManager } from '../game/SoundManager';
-import { Volume2, VolumeX, RotateCcw, Compass } from 'lucide-react';
+import { Volume2, VolumeX, RotateCcw, Compass, Maximize, Minimize } from 'lucide-react';
 
 interface HUDOverlayProps {
   currentMode: GameMode;
@@ -19,12 +19,52 @@ export const HUDOverlay: React.FC<HUDOverlayProps> = ({
   onRestart,
 }) => {
   const [isMuted, setIsMuted] = useState(SoundManager.getInstance().getMuted());
+  const [isFullscreen, setIsFullscreen] = useState(Boolean(document.fullscreenElement));
   const [activeSpeech, setActiveSpeech] = useState<{
     character: 'anam' | 'araf' | 'adiba' | 'arabi';
     text: string;
   } | null>(null);
 
   const activeMode = currentMode || gameState.mode;
+
+  // Listen to fullscreen changes
+  useEffect(() => {
+    const handleFsChange = () => {
+      setIsFullscreen(Boolean(document.fullscreenElement));
+    };
+    document.addEventListener('fullscreenchange', handleFsChange);
+    document.addEventListener('webkitfullscreenchange', handleFsChange);
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFsChange);
+      document.removeEventListener('webkitfullscreenchange', handleFsChange);
+    };
+  }, []);
+
+  const handleToggleFullscreen = async () => {
+    SoundManager.getInstance().ensureContext();
+    try {
+      if (!document.fullscreenElement) {
+        const docEl = document.documentElement as any;
+        if (docEl.requestFullscreen) {
+          await docEl.requestFullscreen();
+        } else if (docEl.webkitRequestFullscreen) {
+          await docEl.webkitRequestFullscreen();
+        }
+        const orient = screen.orientation as any;
+        if (orient && orient.lock) {
+          await orient.lock('landscape').catch(() => {});
+        }
+      } else {
+        if (document.exitFullscreen) {
+          await document.exitFullscreen();
+        } else if ((document as any).webkitExitFullscreen) {
+          await (document as any).webkitExitFullscreen();
+        }
+      }
+    } catch {
+      // ignore
+    }
+  };
 
   // Update speech bubble when a new quote arrives
   useEffect(() => {
@@ -110,8 +150,22 @@ export const HUDOverlay: React.FC<HUDOverlayProps> = ({
           </button>
         </div>
 
-        {/* Right Actions: Sound & Restart */}
+        {/* Right Actions: Fullscreen, Sound & Restart */}
         <div className="flex items-center gap-2 pointer-events-auto">
+          {/* Fullscreen Toggle */}
+          <button
+            onClick={handleToggleFullscreen}
+            aria-label="Fullscreen Toggle"
+            className="w-10 h-10 md:w-11 md:h-11 rounded-full glass-panel flex items-center justify-center text-white hover:bg-slate-700/60 transition active:scale-90 shadow-md border border-white/20"
+            title={isFullscreen ? 'ফুলস্ক্রিন বন্ধ' : 'ফুলস্ক্রিন করুন'}
+          >
+            {isFullscreen ? (
+              <Minimize className="w-4 h-4 text-amber-400" />
+            ) : (
+              <Maximize className="w-4 h-4 text-sky-400" />
+            )}
+          </button>
+
           <button
             onClick={handleToggleSound}
             aria-label="Sound Toggle"
@@ -161,8 +215,12 @@ export const HUDOverlay: React.FC<HUDOverlayProps> = ({
         )}
       </div>
 
-      {/* Bottom spacer (Distance/boost and jump button removed per user request) */}
-      <div className="w-full pointer-events-none" />
+      {/* Bottom hint for Mobile / Touch screens */}
+      <div className="w-full flex justify-center pb-2 pointer-events-none">
+        <span className="text-[11px] sm:text-xs text-slate-400/80 bg-slate-900/60 backdrop-blur-sm px-3.5 py-1 rounded-full border border-white/10 shadow-sm animate-pulse">
+          👆 স্ক্রিনের যেকোনো জায়গায় ট্যাপ করে লাফ দিন
+        </span>
+      </div>
     </div>
   );
 };

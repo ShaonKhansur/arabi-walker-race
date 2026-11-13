@@ -6,6 +6,7 @@ import { HUDOverlay } from './components/HUDOverlay';
 import { ModeSelectModal } from './components/ModeSelectModal';
 import { GameOverModal } from './components/GameOverModal';
 import { OrientationPrompt } from './components/OrientationPrompt';
+import { SoundManager } from './game/SoundManager';
 
 export const App: React.FC = () => {
   const [mode, setMode] = useState<GameMode>('araf');
@@ -120,8 +121,34 @@ export const App: React.FC = () => {
     handleRestart();
   };
 
+  const handleScreenTap = (e: React.PointerEvent) => {
+    // Unlock Web Audio on first mobile touch (crucial for iOS Safari & Android Chrome)
+    SoundManager.getInstance().ensureContext();
+
+    const target = e.target as HTMLElement | null;
+    if (
+      target &&
+      (target.closest('button') ||
+        target.closest('[data-no-jump]') ||
+        target.closest('.modal-content') ||
+        target.closest('input'))
+    ) {
+      return;
+    }
+
+    if (gameRef.current) {
+      const scene = gameRef.current.scene.getScene('GameScene') as GameScene;
+      if (scene && typeof scene.playerJump === 'function') {
+        scene.playerJump();
+      }
+    }
+  };
+
   return (
-    <div className="relative w-screen h-screen overflow-hidden bg-slate-950 font-bengali">
+    <div
+      onPointerDown={handleScreenTap}
+      className="fixed inset-0 w-full h-full h-[100dvh] overflow-hidden bg-slate-950 font-bengali touch-none select-none"
+    >
       {/* Phaser Canvas */}
       <PhaserGame
         mode={mode}

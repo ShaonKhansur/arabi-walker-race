@@ -67,7 +67,21 @@ export const PhaserGame: React.FC<PhaserGameProps> = ({ mode, onStateUpdate, onG
       });
     });
 
+    const handleResize = () => {
+      if (gameRef.current) {
+        gameRef.current.scale.refresh();
+      }
+    };
+    window.addEventListener('resize', handleResize);
+    const onOrientation = () => {
+      setTimeout(handleResize, 150);
+      setTimeout(handleResize, 400);
+    };
+    window.addEventListener('orientationchange', onOrientation);
+
     return () => {
+      window.removeEventListener('resize', handleResize);
+      window.removeEventListener('orientationchange', onOrientation);
       game.destroy(true);
       gameRef.current = null;
     };
