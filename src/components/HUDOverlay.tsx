@@ -11,6 +11,7 @@ interface HUDOverlayProps {
   onInstallClick?: () => void;
   onOpenModeSelect: () => void;
   onRestart: () => void;
+  onJump?: () => void;
 }
 
 export const HUDOverlay: React.FC<HUDOverlayProps> = ({
@@ -21,15 +22,33 @@ export const HUDOverlay: React.FC<HUDOverlayProps> = ({
   onInstallClick,
   onOpenModeSelect,
   onRestart,
+  onJump,
 }) => {
   const [isMuted, setIsMuted] = useState(SoundManager.getInstance().getMuted());
   const [isFullscreen, setIsFullscreen] = useState(Boolean(document.fullscreenElement));
+  const [isPortrait, setIsPortrait] = useState(
+    typeof window !== 'undefined' ? window.innerHeight > window.innerWidth : false
+  );
   const [activeSpeech, setActiveSpeech] = useState<{
     character: 'anam' | 'araf' | 'adiba' | 'arabi';
     text: string;
   } | null>(null);
 
   const activeMode = currentMode || gameState.mode;
+
+  // Listen to orientation / window resize
+  useEffect(() => {
+    const checkOrientation = () => {
+      setIsPortrait(window.innerHeight > window.innerWidth);
+    };
+    checkOrientation();
+    window.addEventListener('resize', checkOrientation);
+    window.addEventListener('orientationchange', checkOrientation);
+    return () => {
+      window.removeEventListener('resize', checkOrientation);
+      window.removeEventListener('orientationchange', checkOrientation);
+    };
+  }, []);
 
   // Listen to fullscreen changes
   useEffect(() => {
@@ -96,35 +115,35 @@ export const HUDOverlay: React.FC<HUDOverlayProps> = ({
   };
 
   return (
-    <div className="absolute inset-0 pointer-events-none flex flex-col justify-between p-3 md:p-6 overflow-hidden select-none font-bengali">
+    <div className="absolute inset-0 pointer-events-none flex flex-col justify-between p-2.5 sm:p-3 md:p-6 overflow-hidden select-none font-bengali">
       {/* Top Header Bar */}
-      <div className="flex items-center justify-between w-full">
+      <div className="flex items-center justify-between w-full gap-2">
         {/* Left Stats: Score, Distance & High Score */}
-        <div className="flex items-center gap-2 md:gap-3 pointer-events-auto">
+        <div className="flex items-center gap-1.5 sm:gap-2 md:gap-3 pointer-events-auto">
           {/* Score & Distance Badge */}
-          <div className="glass-panel px-3.5 py-1.5 md:px-5 md:py-2 rounded-2xl shadow-xl flex items-center gap-3 border border-sky-400/30">
+          <div className="glass-panel px-2.5 py-1 sm:px-4 sm:py-1.5 md:px-5 md:py-2 rounded-2xl shadow-xl flex items-center gap-2 sm:gap-3 border border-sky-400/30">
             <div className="flex flex-col">
-              <span className="text-xs text-sky-300 font-medium">দূরত্ব</span>
-              <span className="text-lg md:text-2xl font-bold text-amber-300">
+              <span className="text-[10px] sm:text-xs text-sky-300 font-medium">দূরত্ব</span>
+              <span className="text-base sm:text-lg md:text-2xl font-bold text-amber-300">
                 {gameState.distance}{" "}
-                <span className="text-xs text-amber-200">মিটার</span>
+                <span className="text-[10px] sm:text-xs text-amber-200">মি.</span>
               </span>
             </div>
-            <div className="h-7 w-[1px] bg-slate-600/60" />
+            <div className="h-6 sm:h-7 w-[1px] bg-slate-600/60" />
             <div className="flex flex-col">
-              <span className="text-xs text-sky-300 font-medium">পয়েন্ট</span>
-              <span className="text-lg md:text-2xl font-bold text-white">
+              <span className="text-[10px] sm:text-xs text-sky-300 font-medium">পয়েন্ট</span>
+              <span className="text-base sm:text-lg md:text-2xl font-bold text-white">
                 {gameState.score}
               </span>
             </div>
             {highScore > 0 && (
               <>
-                <div className="h-7 w-[1px] bg-slate-600/60 hidden sm:block" />
+                <div className="h-6 sm:h-7 w-[1px] bg-slate-600/60 hidden sm:block" />
                 <div className="hidden sm:flex flex-col">
-                  <span className="text-xs text-amber-400 font-medium">
-                    সেরা স্কোর
+                  <span className="text-[10px] sm:text-xs text-amber-400 font-medium">
+                    সেরা
                   </span>
-                  <span className="text-lg md:text-xl font-bold text-amber-400">
+                  <span className="text-base sm:text-lg md:text-xl font-bold text-amber-400">
                     {highScore}
                   </span>
                 </div>
@@ -135,7 +154,7 @@ export const HUDOverlay: React.FC<HUDOverlayProps> = ({
           {/* Player Mode Pill */}
           <button
             onClick={onOpenModeSelect}
-            className={`px-3 py-1.5 md:px-4 md:py-2 rounded-xl text-xs md:text-sm font-bold shadow-lg transition-all transform active:scale-95 flex items-center gap-1.5 border ${
+            className={`px-2.5 py-1 sm:px-3 sm:py-1.5 md:px-4 md:py-2 rounded-xl text-xs sm:text-sm font-bold shadow-lg transition-all transform active:scale-95 flex items-center gap-1.5 border ${
               activeMode === 'araf'
                 ? 'bg-gradient-to-r from-emerald-500 to-teal-600 border-emerald-300 text-white'
                 : activeMode === 'adiba'
@@ -144,12 +163,15 @@ export const HUDOverlay: React.FC<HUDOverlayProps> = ({
             }`}
           >
             <Compass className="w-3.5 h-3.5" />
-            <span>
+            <span className="hidden xs:inline">
               {activeMode === 'araf'
-                ? '🧒 প্লেয়ার: আরাফ (৫ বছর)'
+                ? '🧒 আরাফ (৫)'
                 : activeMode === 'adiba'
-                ? '👧 প্লেয়ার: আদিবা (৯ বছর)'
-                : '👦 প্লেয়ার: আনাম (১৩ বছর)'}
+                ? '👧 আদিবা (৯)'
+                : '👦 আনাম (১৩)'}
+            </span>
+            <span className="xs:hidden">
+              {activeMode === 'araf' ? 'আরাফ' : activeMode === 'adiba' ? 'আদিবা' : 'আনাম'}
             </span>
           </button>
 
@@ -157,49 +179,49 @@ export const HUDOverlay: React.FC<HUDOverlayProps> = ({
           {isInstallable && (
             <button
               onClick={onInstallClick}
-              className="px-2.5 py-1.5 md:px-3.5 md:py-2 rounded-xl text-xs md:text-sm font-extrabold shadow-lg transition-all transform active:scale-95 flex items-center gap-1.5 bg-gradient-to-r from-amber-500 via-orange-500 to-rose-500 text-white border border-amber-300 shadow-orange-500/25 animate-pulse"
+              className="px-2 py-1 sm:px-3 sm:py-1.5 md:px-3.5 md:py-2 rounded-xl text-xs sm:text-sm font-extrabold shadow-lg transition-all transform active:scale-95 flex items-center gap-1 bg-gradient-to-r from-amber-500 via-orange-500 to-rose-500 text-white border border-amber-300 shadow-orange-500/25 animate-pulse"
               title="মোবাইলে এক-ট্যাপে ইনস্টল করুন"
             >
               <Download className="w-3.5 h-3.5" />
-              <span>📲 ইনস্টল</span>
+              <span className="hidden sm:inline">📲 ইনস্টল</span>
             </button>
           )}
         </div>
 
         {/* Right Actions: Fullscreen, Sound & Restart */}
-        <div className="flex items-center gap-2 pointer-events-auto">
+        <div className="flex items-center gap-1.5 sm:gap-2 pointer-events-auto">
           {/* Fullscreen Toggle */}
           <button
             onClick={handleToggleFullscreen}
             aria-label="Fullscreen Toggle"
-            className="w-10 h-10 md:w-11 md:h-11 rounded-full glass-panel flex items-center justify-center text-white hover:bg-slate-700/60 transition active:scale-90 shadow-md border border-white/20"
+            className="w-9 h-9 sm:w-10 sm:h-10 md:w-11 md:h-11 rounded-full glass-panel flex items-center justify-center text-white hover:bg-slate-700/60 transition active:scale-90 shadow-md border border-white/20"
             title={isFullscreen ? 'ফুলস্ক্রিন বন্ধ' : 'ফুলস্ক্রিন করুন'}
           >
             {isFullscreen ? (
-              <Minimize className="w-4 h-4 text-amber-400" />
+              <Minimize className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-400" />
             ) : (
-              <Maximize className="w-4 h-4 text-sky-400" />
+              <Maximize className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-sky-400" />
             )}
           </button>
 
           <button
             onClick={handleToggleSound}
             aria-label="Sound Toggle"
-            className="w-10 h-10 md:w-11 md:h-11 rounded-full glass-panel flex items-center justify-center text-white hover:bg-slate-700/60 transition active:scale-90 shadow-md border border-white/20"
+            className="w-9 h-9 sm:w-10 sm:h-10 md:w-11 md:h-11 rounded-full glass-panel flex items-center justify-center text-white hover:bg-slate-700/60 transition active:scale-90 shadow-md border border-white/20"
           >
             {isMuted ? (
-              <VolumeX className="w-5 h-5 text-red-400" />
+              <VolumeX className="w-4 h-4 sm:w-5 sm:h-5 text-red-400" />
             ) : (
-              <Volume2 className="w-5 h-5 text-sky-400" />
+              <Volume2 className="w-4 h-4 sm:w-5 sm:h-5 text-sky-400" />
             )}
           </button>
 
           <button
             onClick={onRestart}
             aria-label="Restart"
-            className="w-10 h-10 md:w-11 md:h-11 rounded-full glass-panel flex items-center justify-center text-white hover:bg-slate-700/60 transition active:scale-90 shadow-md border border-white/20"
+            className="w-9 h-9 sm:w-10 sm:h-10 md:w-11 md:h-11 rounded-full glass-panel flex items-center justify-center text-white hover:bg-slate-700/60 transition active:scale-90 shadow-md border border-white/20"
           >
-            <RotateCcw className="w-4 h-4 text-emerald-400" />
+            <RotateCcw className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-400" />
           </button>
         </div>
       </div>
@@ -210,12 +232,12 @@ export const HUDOverlay: React.FC<HUDOverlayProps> = ({
           <div
             className={`transition-all duration-300 transform scale-100 animate-bounce-soft pointer-events-none z-20 ${
               activeSpeech.character === "arabi"
-                ? "translate-x-16"
-                : "-translate-x-16"
+                ? "translate-x-12 sm:translate-x-16"
+                : "-translate-x-12 sm:-translate-x-16"
             }`}
           >
-            <div className="relative bg-white text-slate-800 px-4 py-2.5 rounded-2xl shadow-2xl border-2 border-sky-400 text-sm md:text-base font-bold flex items-center gap-2">
-              <span className="text-xl">
+            <div className="relative bg-white text-slate-800 px-3 py-2 sm:px-4 sm:py-2.5 rounded-2xl shadow-2xl border-2 border-sky-400 text-xs sm:text-sm md:text-base font-bold flex items-center gap-1.5 sm:gap-2">
+              <span className="text-base sm:text-xl">
                 {activeSpeech.character === 'arabi'
                   ? '👶 আরাবি:'
                   : activeSpeech.character === 'adiba'
@@ -231,12 +253,34 @@ export const HUDOverlay: React.FC<HUDOverlayProps> = ({
         )}
       </div>
 
-      {/* Bottom hint for Mobile / Touch screens */}
-      <div className="w-full flex justify-center pb-2 pointer-events-none">
-        <span className="text-[11px] sm:text-xs text-slate-400/80 bg-slate-900/60 backdrop-blur-sm px-3.5 py-1 rounded-full border border-white/10 shadow-sm animate-pulse">
-          👆 স্ক্রিনের যেকোনো জায়গায় ট্যাপ করে লাফ দিন
-        </span>
-      </div>
+      {/* Bottom Area: Dedicated Mobile Jump Button (in portrait) or Hint Pill (in landscape) */}
+      {isPortrait ? (
+        <div className="w-full flex flex-col items-center gap-1.5 pb-2 pt-1 pointer-events-auto z-20">
+          <button
+            data-no-jump="true"
+            onClick={(e) => {
+              e.stopPropagation();
+              onJump?.();
+            }}
+            className="w-11/12 max-w-sm py-3.5 px-6 rounded-2xl bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 hover:from-yellow-300 hover:to-amber-400 active:scale-95 text-slate-950 font-black text-base md:text-lg shadow-xl shadow-amber-500/30 border-2 border-yellow-200 flex items-center justify-center gap-2 transform transition-transform cursor-pointer"
+          >
+            <span className="text-2xl animate-bounce">👆</span>
+            <span>লাফ দিন (JUMP)</span>
+            <span className="text-xs bg-slate-950/15 text-slate-900 px-2 py-0.5 rounded-full font-bold">
+              ডাবল জাম্প 🚀
+            </span>
+          </button>
+          <span className="text-[11px] text-slate-400 font-medium">
+            স্ক্রিনের যেকোনো জায়গায় ট্যাপ করলেও লাফ দিবে
+          </span>
+        </div>
+      ) : (
+        <div className="w-full flex justify-center pb-2 pointer-events-none">
+          <span className="text-[11px] sm:text-xs text-slate-400/80 bg-slate-900/60 backdrop-blur-sm px-3.5 py-1 rounded-full border border-white/10 shadow-sm animate-pulse">
+            👆 স্ক্রিনের যেকোনো জায়গায় ট্যাপ করে বা Space চেপে লাফ দিন
+          </span>
+        </div>
+      )}
     </div>
   );
 };

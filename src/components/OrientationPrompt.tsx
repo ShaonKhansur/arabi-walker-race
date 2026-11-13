@@ -22,12 +22,13 @@ export const OrientationPrompt: React.FC<OrientationPromptProps> = ({
   onOpenInAppGuide,
 }) => {
   const [isPortrait, setIsPortrait] = useState(false);
+  const [isDismissed, setIsDismissed] = useState(false);
 
   useEffect(() => {
     const checkOrientation = () => {
       // Check window aspect ratio
       const portrait =
-        window.innerHeight > window.innerWidth && window.innerWidth < 800;
+        window.innerHeight > window.innerWidth && window.innerWidth < 850;
       setIsPortrait(portrait);
     };
 
@@ -70,77 +71,58 @@ export const OrientationPrompt: React.FC<OrientationPromptProps> = ({
     }
   };
 
-  if (!isPortrait) return null;
-
-  const targetBrowser = isIOS ? 'Safari' : 'Chrome';
+  if (!isPortrait || isDismissed) return null;
 
   return (
-    <div className="fixed inset-0 z-[100] bg-slate-950/95 backdrop-blur-md flex flex-col items-center justify-center p-5 md:p-6 text-center font-bengali overflow-y-auto">
-      {/* In-App Browser (Messenger / Facebook) Alert Notice */}
-      {isInApp && (
-        <div
-          onClick={onOpenInAppGuide}
-          className="w-full max-w-xs mb-3.5 p-3 rounded-2xl bg-amber-500/20 border-2 border-amber-400/60 text-amber-200 text-left flex items-start gap-2.5 shadow-xl shadow-amber-500/10 cursor-pointer active:scale-98 transition transform animate-in fade-in slide-in-from-top-3 duration-300"
-        >
-          <AlertTriangle className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
-          <div className="text-xs">
-            <div className="font-black text-amber-300 flex items-center justify-between">
-              <span>আপনি {inAppBrowserName}-এ আছেন!</span>
-              <span className="text-[10px] bg-amber-400/30 px-1.5 py-0.2 rounded text-white font-bold">টিপস ↗</span>
-            </div>
-            <p className="text-amber-100/90 text-[11px] mt-0.5 leading-snug">
-              ইনস্টল ও ফুলস্ক্রিন করতে উপরে ডানের <strong className="text-white bg-slate-900/80 px-1 rounded">...</strong> চেপে <strong className="text-white underline">Open in {targetBrowser}</strong> করুন।
-            </p>
+    <div
+      data-no-jump="true"
+      className="fixed top-2 left-2 right-2 z-40 max-w-md mx-auto pointer-events-auto font-bengali animate-in fade-in slide-in-from-top-2 duration-300"
+    >
+      <div className="glass-panel p-2.5 sm:p-3 rounded-2xl bg-slate-900/90 border border-sky-400/40 shadow-2xl flex items-center justify-between gap-2">
+        {/* Left icon + text */}
+        <div className="flex items-center gap-2 min-w-0">
+          <div className="w-8 h-8 rounded-xl bg-sky-500/20 border border-sky-400/30 flex items-center justify-center shrink-0">
+            <Smartphone className="w-4 h-4 text-sky-400 transform rotate-90" />
+          </div>
+          <div className="flex flex-col min-w-0 text-left">
+            <span className="text-xs font-bold text-white truncate">
+              {isInApp ? `টিপস: ${inAppBrowserName}-এ খেলছেন` : 'মোবাইল কাত করে বড় স্ক্রিনে খেলুন'}
+            </span>
+            <span className="text-[10px] text-sky-200/80 truncate">
+              {isInApp ? 'ফুলস্ক্রিনের জন্য ডানের (...) টিপস দেখুন' : 'আড়াআড়ি ধরলে আরও পরিষ্কার দেখা যাবে'}
+            </span>
           </div>
         </div>
-      )}
 
-      {/* Phone Rotate Graphic */}
-      <div className="relative mb-3">
-        <div className="w-18 h-18 md:w-20 md:h-20 rounded-3xl bg-sky-500/10 border border-sky-400/30 flex items-center justify-center animate-bounce shadow-lg shadow-sky-500/20">
-          <Smartphone className="w-9 h-9 md:w-10 md:h-10 text-sky-400 transform rotate-90" />
-        </div>
-        <div className="absolute -top-1 -right-1 w-6 h-6 rounded-full bg-amber-400 flex items-center justify-center text-slate-950 text-xs font-black shadow-md">
-          ⟳
+        {/* Action buttons */}
+        <div className="flex items-center gap-1.5 shrink-0">
+          {isInApp ? (
+            <button
+              onClick={onOpenInAppGuide}
+              className="px-2.5 py-1 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 border border-amber-400/50 text-amber-300 text-[11px] font-bold active:scale-95 transition"
+            >
+              টিপস ↗
+            </button>
+          ) : (
+            <button
+              onClick={handleAutoFullscreenAndLandscape}
+              className="px-2.5 py-1 rounded-xl bg-gradient-to-r from-sky-500 to-indigo-600 text-white text-[11px] font-bold border border-sky-300/30 active:scale-95 transition flex items-center gap-1 shadow"
+            >
+              <Maximize className="w-3 h-3" />
+              <span>ফুলস্ক্রিন</span>
+            </button>
+          )}
+
+          {/* Dismiss button */}
+          <button
+            onClick={() => setIsDismissed(true)}
+            className="w-7 h-7 rounded-lg bg-slate-800/80 hover:bg-slate-700/80 text-slate-400 hover:text-white flex items-center justify-center text-xs active:scale-90 transition"
+            title="নোটিশ বন্ধ করুন"
+          >
+            ✕
+          </button>
         </div>
       </div>
-
-      <h3 className="text-lg md:text-2xl font-black text-white mb-1.5 tracking-wide">
-        মোবাইলটি ঘুরিয়ে আড়াআড়ি (Landscape) করুন
-      </h3>
-      <p className="text-slate-300 text-xs md:text-sm max-w-xs mb-4 leading-relaxed">
-        আরাবির ওয়াকার দৌড় চমৎকারভাবে ও ফুলস্ক্রিনে খেলতে আপনার ফোনটি কাত করে ধরুন।
-      </p>
-
-      {/* Button 1: Fullscreen & Landscape */}
-      <button
-        onClick={handleAutoFullscreenAndLandscape}
-        className="w-full max-w-xs px-5 py-3 rounded-2xl bg-gradient-to-r from-sky-500 via-indigo-500 to-purple-600 hover:from-sky-400 hover:to-purple-500 text-white font-extrabold text-sm shadow-xl shadow-indigo-500/25 border border-sky-300/40 flex items-center justify-center gap-2 transform active:scale-95 transition-all mb-3.5"
-      >
-        <Maximize className="w-4 h-4" />
-        <span>📱 ফুলস্ক্রিন ও ল্যান্ডস্কেপ করুন</span>
-      </button>
-
-      {/* One-Tap Install Option directly in Portrait Mode (Without rotating) */}
-      {!isInstalled && onInstallClick && (
-        <div className="w-full max-w-xs pt-3.5 border-t border-slate-800/80 flex flex-col items-center animate-in fade-in slide-in-from-bottom-2 duration-300">
-          <span className="text-xs text-amber-300 font-semibold mb-2">
-            অথবা ল্যান্ডস্কেপ না ঘুরিয়েও সরাসরি ইনস্টল করুন:
-          </span>
-          <button
-            onClick={onInstallClick}
-            className="w-full py-3.5 px-4 rounded-2xl bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 text-slate-950 font-black text-sm shadow-xl shadow-amber-500/25 border border-yellow-200/80 flex items-center justify-center gap-2 transform active:scale-95 transition-all hover:brightness-105"
-          >
-            <Download className="w-5 h-5 text-slate-950 stroke-[2.5]" />
-            <span>📲 এক ট্যাপে ইনস্টল করুন (Install App)</span>
-          </button>
-          <p className="text-[11px] text-slate-400 mt-2 text-center leading-snug">
-            {isInApp
-              ? `${inAppBrowserName}-এ চাপলে ${targetBrowser}-এ খোলার গাইড আসবে।`
-              : 'ইনস্টল করলে হোমস্ক্রিনে অ্যাপ আইকন তৈরি হবে এবং চালু করলেই স্বয়ংক্রিয়ভাবে ফুলস্ক্রিন ল্যান্ডস্কেপে চলবে।'}
-          </p>
-        </div>
-      )}
     </div>
   );
 };

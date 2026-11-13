@@ -18,38 +18,41 @@ export const ModeSelectModal: React.FC<ModeSelectModalProps> = ({
   onClose,
 }) => {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 md:p-4 bg-slate-950/80 backdrop-blur-md font-bengali">
-      <div className="bg-gradient-to-b from-slate-900 to-slate-950 border border-sky-500/30 rounded-3xl p-4 md:p-6 max-w-2xl w-full max-h-[95dvh] overflow-y-auto shadow-2xl relative text-center animate-in fade-in zoom-in-95 duration-200">
+    <div
+      data-no-jump="true"
+      className="fixed inset-0 z-50 flex items-center justify-center p-2.5 sm:p-4 bg-slate-950/85 backdrop-blur-md font-bengali overflow-y-auto"
+    >
+      <div className="bg-gradient-to-b from-slate-900 to-slate-950 border border-sky-500/30 rounded-3xl p-3.5 sm:p-5 md:p-6 max-w-2xl w-full max-h-[92dvh] overflow-y-auto shadow-2xl relative text-center animate-in fade-in zoom-in-95 duration-200">
         {/* Glow ambient background */}
         <div className="absolute -top-24 -left-24 w-48 h-48 bg-sky-500/20 rounded-full blur-3xl pointer-events-none" />
         <div className="absolute -bottom-24 -right-24 w-48 h-48 bg-amber-500/20 rounded-full blur-3xl pointer-events-none" />
 
         {/* 1. Main Game Banner */}
-        <div className="relative w-full h-32 md:h-44 rounded-2xl overflow-hidden mb-3.5 border-2 border-sky-400/40 shadow-xl group">
+        <div className="relative w-full h-24 sm:h-36 md:h-44 rounded-2xl overflow-hidden mb-3 border-2 border-sky-400/40 shadow-xl group">
           <img
             src="/assets/bg/game-banner.jpg"
             alt="আরাবি ওয়াকার রান - Game Banner"
             className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/30 to-transparent" />
-          <div className="absolute bottom-2.5 left-3 right-3 flex items-center justify-between">
-            <span className="bg-sky-500/90 text-white text-xs md:text-sm font-extrabold px-3 py-1 rounded-full shadow-lg backdrop-blur-sm border border-white/20">
+          <div className="absolute bottom-2 left-2.5 right-2.5 flex items-center justify-between">
+            <span className="bg-sky-500/90 text-white text-[11px] sm:text-sm font-extrabold px-2.5 py-0.5 sm:px-3 sm:py-1 rounded-full shadow-lg backdrop-blur-sm border border-white/20">
               👶 আরাবি ওয়াকার রান
             </span>
-            <span className="bg-amber-400/90 text-slate-950 text-xs md:text-sm font-extrabold px-3 py-1 rounded-full shadow-lg backdrop-blur-sm border border-white/30">
+            <span className="bg-amber-400/90 text-slate-950 text-[11px] sm:text-sm font-extrabold px-2.5 py-0.5 sm:px-3 sm:py-1 rounded-full shadow-lg backdrop-blur-sm border border-white/30">
               🏃‍♂️ তাড়া করো!
             </span>
           </div>
         </div>
 
         {/* Title */}
-        <div className="flex items-center justify-center gap-2 mb-1">
-          <span className="text-2xl md:text-3xl">👶</span>
-          <h2 className="text-xl md:text-2xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-sky-300 via-amber-200 to-emerald-300">
+        <div className="flex items-center justify-center gap-1.5 mb-0.5">
+          <span className="text-xl sm:text-2xl md:text-3xl">👶</span>
+          <h2 className="text-lg sm:text-xl md:text-2xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-sky-300 via-amber-200 to-emerald-300">
             কে খেলবে? প্লেয়ার বেছে নিন
           </h2>
         </div>
-        <p className="text-slate-300 text-xs md:text-sm mb-3.5 font-medium">
+        <p className="text-slate-300 text-xs sm:text-sm mb-3 font-medium">
           আরাবি সামনে ওয়াকার নিয়ে ছুটছে আর খেলনা ছুড়ছে! কে আরাবিকে ধরবে?
         </p>
 

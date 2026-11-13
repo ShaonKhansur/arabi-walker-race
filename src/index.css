@@ -20,6 +20,10 @@ html, body, #root {
   font-family: var(--font-bengali);
   touch-action: none;
   -webkit-touch-callout: none;
+  overscroll-behavior: none;
+  overscroll-behavior-y: none;
+  position: fixed;
+  inset: 0;
 }
 
 /* Custom Speech Bubble */

@@ -37,6 +37,7 @@ export class GameScene extends Phaser.Scene {
   private isGameStarted: boolean = false;
   private isStumbling: boolean = false;
   private catchUpTimer: number = 0; // Comeback speed surge after hit
+  private invulnerableTimer: number = 0; // Hit recovery invulnerability
   private toyTimerEvent?: Phaser.Time.TimerEvent;
   private milkTimerEvent?: Phaser.Time.TimerEvent;
 
@@ -53,10 +54,52 @@ export class GameScene extends Phaser.Scene {
   private emitterDust?: Phaser.GameObjects.Particles.ParticleEmitter;
   private emitterStars?: Phaser.GameObjects.Particles.ParticleEmitter;
 
+  public get characterConfig() {
+    switch (this.gameMode) {
+      case 'araf': // 5yo boy - Easy & Fun
+        return {
+          baseSpeed: 290,
+          baseAdvance: 62,
+          catchUpBoost: 105,
+          toyInterval: 3400,
+          milkInterval: 6500,
+          jumpPower: -610,
+          stumbleDuration: 700,
+          stumbleBack: 18,
+          scale: 0.52,
+          originY: 396 / 420,
+        };
+      case 'adiba': // 9yo sister - Medium
+        return {
+          baseSpeed: 330,
+          baseAdvance: 72,
+          catchUpBoost: 115,
+          toyInterval: 2800,
+          milkInterval: 5800,
+          jumpPower: -595,
+          stumbleDuration: 750,
+          stumbleBack: 22,
+          scale: 0.55,
+          originY: 430 / 450,
+        };
+      case 'anam': // 13yo brother - Challenge
+        return {
+          baseSpeed: 370,
+          baseAdvance: 82,
+          catchUpBoost: 125,
+          toyInterval: 2400,
+          milkInterval: 5200,
+          jumpPower: -585,
+          stumbleDuration: 750,
+          stumbleBack: 25,
+          scale: 0.60,
+          originY: 460 / 480,
+        };
+    }
+  }
+
   private get playerBaseScale(): number {
-    if (this.gameMode === 'araf') return 0.52; // 5yo boy
-    if (this.gameMode === 'adiba') return 0.55; // 9yo sister
-    return 0.60; // 13yo boy
+    return this.characterConfig.scale;
   }
   private readonly arabiScale = 0.32;
 
@@ -117,11 +160,12 @@ export class GameScene extends Phaser.Scene {
     this.score = 0;
     this.totalRunDistance = 0;
     this.arabiBoost = 0;
-    this.baseSpeed = this.gameMode === 'araf' ? 280 : this.gameMode === 'adiba' ? 320 : 360;
+    this.baseSpeed = this.characterConfig.baseSpeed;
     this.currentSpeed = this.baseSpeed;
     this.isGameOver = false;
     this.isStumbling = false;
     this.catchUpTimer = 0;
+    this.invulnerableTimer = 0;
     this.jumpCount = 0;
     this.dustTimer = 0;
   }
@@ -370,20 +414,37 @@ export class GameScene extends Phaser.Scene {
   }
 
   public startGame() {
-    if (this.isGameStarted) return;
+    if (this.isGameOver) return;
     this.isGameStarted = true;
     this.startActiveGameplay();
+  }
+
+  public pauseGame() {
+    this.isGameStarted = false;
+    if (this.toyTimerEvent) this.toyTimerEvent.paused = true;
+    if (this.milkTimerEvent) this.milkTimerEvent.paused = true;
+    SoundManager.getInstance().stopBGM();
+  }
+
+  public resumeGame() {
+    if (this.isGameOver) return;
+    this.isGameStarted = true;
+    if (this.toyTimerEvent) this.toyTimerEvent.paused = false;
+    if (this.milkTimerEvent) this.milkTimerEvent.paused = false;
+    SoundManager.getInstance().ensureContext();
+    SoundManager.getInstance().startBGM();
   }
 
   private startActiveGameplay() {
     SoundManager.getInstance().ensureContext();
     SoundManager.getInstance().startBGM();
 
+    const cfg = this.characterConfig;
+
     // Arabi flings a toy backward periodically
     if (this.toyTimerEvent) this.toyTimerEvent.destroy();
-    const toyInterval = this.gameMode === 'araf' ? 2600 : 1850;
     this.toyTimerEvent = this.time.addEvent({
-      delay: toyInterval,
+      delay: cfg.toyInterval,
       callback: this.flingToyFromArabi,
       callbackScope: this,
       loop: true
@@ -391,9 +452,8 @@ export class GameScene extends Phaser.Scene {
 
     // Milk bottle spawns ahead for Arabi
     if (this.milkTimerEvent) this.milkTimerEvent.destroy();
-    const milkInterval = this.gameMode === 'araf' ? 4200 : 3500;
     this.milkTimerEvent = this.time.addEvent({
-      delay: milkInterval,
+      delay: cfg.milkInterval,
       callback: this.spawnMilkForArabi,
       callbackScope: this,
       loop: true
@@ -416,16 +476,17 @@ export class GameScene extends Phaser.Scene {
     if (this.jumpCount < this.maxJumps) {
       this.jumpCount++;
       const pBody = this.player.body as Phaser.Physics.Arcade.Body;
-      pBody.setVelocityY(this.jumpCount === 1 ? -600 : -520);
+      const cfg = this.characterConfig;
+      pBody.setVelocityY(this.jumpCount === 1 ? cfg.jumpPower : cfg.jumpPower * 0.88);
 
       // Playful squash & spring
       this.tweens.killTweensOf(this.player);
-      this.player.setScale(this.playerBaseScale);
+      this.player.setScale(cfg.scale);
       this.tweens.add({
         targets: this.player,
-        scaleY: this.playerBaseScale * 1.15,
-        scaleX: this.playerBaseScale * 0.88,
-        duration: 130,
+        scaleY: cfg.scale * 1.15,
+        scaleX: cfg.scale * 0.88,
+        duration: 120,
         yoyo: true,
         ease: 'Back.easeOut'
       });
@@ -513,8 +574,9 @@ export class GameScene extends Phaser.Scene {
 
   // Player hits a thrown toy! (BUMP & Stumble)
   private handlePlayerHitToy(_p: unknown, toyObject: unknown) {
-    if (this.isStumbling) return;
+    if (this.isStumbling || this.invulnerableTimer > 0 || this.isGameOver) return;
     this.isStumbling = true;
+    this.invulnerableTimer = 1.3;
 
     const toy = toyObject as Phaser.GameObjects.Sprite;
     const shadow = toy.getData('shadow') as Phaser.GameObjects.Image | undefined;
@@ -522,23 +584,40 @@ export class GameScene extends Phaser.Scene {
     toy.destroy();
 
     SoundManager.getInstance().playHit();
-    this.cameras.main.shake(140, 0.009);
+    this.cameras.main.shake(140, 0.008);
 
-    // Player stumbles and drops back in X!
+    const cfg = this.characterConfig;
+
+    // Delay next toy throw so player has ample breathing room to recover!
+    if (this.toyTimerEvent) {
+      this.toyTimerEvent.reset({
+        delay: cfg.toyInterval + 600,
+        callback: this.flingToyFromArabi,
+        callbackScope: this,
+        loop: true
+      });
+    }
+
+    // Visibly decelerate speed to 45% during stumble
+    this.currentSpeed = this.baseSpeed * 0.45;
+
+    // Gentle stumble setback (only 18-25px, keeping player in comfortable view)
     const { width } = this.scale;
-    const minX = width * 0.12;
+    const minX = width * 0.14;
+
     this.tweens.add({
       targets: this.player,
-      x: Math.max(minX, this.player.x - 45),
-      tint: 0xff7777,
-      duration: 200,
+      x: Math.max(minX, this.player.x - cfg.stumbleBack),
+      tint: 0xff5555,
+      duration: 150,
       yoyo: true,
+      repeat: 2,
       onComplete: () => {
         this.player.clearTint();
         this.isStumbling = false;
 
-        // Player gets a fast comeback speed surge to catch Arabi!
-        this.catchUpTimer = 4.2;
+        // Player gets a generous 5-second comeback speed surge!
+        this.catchUpTimer = 5.0;
 
         const speedBadge = this.add.text(this.player.x, this.player.y - 130, '⚡ স্পিড আপ! আরাবিকে ধরো! 💨', {
           fontFamily: '"Hind Siliguri", sans-serif',
@@ -553,22 +632,22 @@ export class GameScene extends Phaser.Scene {
           targets: speedBadge,
           y: this.player.y - 180,
           alpha: 0,
-          duration: 750,
+          duration: 850,
           onComplete: () => speedBadge.destroy()
         });
 
-        // Motivated dialogue
+        // Motivated Bengali comeback dialogue
         const recoveryQuote =
           this.gameMode === 'araf'
-            ? 'হোঁচট খেলেও থামবো না! জোরে দৌড়াও!'
+            ? 'হোঁচট খেলেও আমি থামবো না! স্পিড আপ!'
             : this.gameMode === 'adiba'
-            ? 'এবার আমি আরও জোরে দৌড়াচ্ছি!'
-            : 'এবার আর পালাতে পারবে না, স্পিড আপ!';
+            ? 'এবার আমি আরও জোরে ছুটছি, দাঁড়াও!'
+            : 'এবার আর পালাতে পারবে না, ফুল স্পিড!';
         this.triggerSpeech(this.gameMode, recoveryQuote);
       }
     });
 
-    // Player yells in frustration
+    // Player yells in surprise/stumble
     const ouchQuote =
       this.gameMode === 'araf'
         ? 'উহ! পায়ে খেলনা লাগলো!'
@@ -581,7 +660,8 @@ export class GameScene extends Phaser.Scene {
   // Arabi drinks milk when bottle reaches her
   private arabiDrinksMilk(bottle: Phaser.GameObjects.Sprite) {
     bottle.destroy();
-    this.arabiBoost = Math.min(100, this.arabiBoost + 10);
+    // Balanced boost (+8% per milk bottle)
+    this.arabiBoost = Math.min(100, this.arabiBoost + 8);
     SoundManager.getInstance().playCollect();
 
     // Sparkle explosion around Arabi
@@ -737,6 +817,17 @@ export class GameScene extends Phaser.Scene {
 
     const deltaSec = delta / 1000;
 
+    // Invulnerability flashing after hit
+    if (this.invulnerableTimer > 0) {
+      this.invulnerableTimer -= deltaSec;
+      if (this.invulnerableTimer <= 0) {
+        this.invulnerableTimer = 0;
+        this.player.setAlpha(1.0);
+      } else {
+        this.player.setAlpha(Math.sin(time * 0.035) > 0 ? 0.95 : 0.45);
+      }
+    }
+
     // Comeback speed management after obstacle hit
     if (this.catchUpTimer > 0) {
       this.catchUpTimer -= deltaSec;
@@ -744,7 +835,7 @@ export class GameScene extends Phaser.Scene {
         this.catchUpTimer = 0;
         this.currentSpeed = this.baseSpeed;
       } else {
-        this.currentSpeed = this.baseSpeed * 1.30;
+        this.currentSpeed = this.baseSpeed * 1.35;
       }
     }
 
@@ -757,24 +848,32 @@ export class GameScene extends Phaser.Scene {
 
     // Gentle boost burn so Arabi doesn't escape too fast without player having a chance
     if (this.arabiBoost > 0) {
-      this.arabiBoost = Math.max(0, this.arabiBoost - deltaSec * 0.75);
+      this.arabiBoost = Math.max(0, this.arabiBoost - deltaSec * 1.0);
     }
 
     // 3. Player advancement towards Arabi when not stumbling!
     if (!this.isStumbling) {
-      let advanceRate =
-        this.gameMode === 'araf' ? 42 : this.gameMode === 'adiba' ? 48 : 55;
-      
-      // Fast comeback speed boost if recovering from hit
+      const cfg = this.characterConfig;
+      let advanceRate = cfg.baseAdvance;
+
+      // Dynamic Rubber-Band Catch-up:
+      // If distance to Arabi is large, increase advance rate dynamically so Arabi is NEVER unreachable!
+      const currentGap = this.arabi.x - this.player.x;
+      if (currentGap > 180) {
+        const rubberBand = (currentGap - 180) * 0.35;
+        advanceRate += Math.min(125, rubberBand);
+      }
+
+      // Fast comeback speed boost if recovering from hit or great jump
       if (this.catchUpTimer > 0) {
-        advanceRate += 70;
+        advanceRate += cfg.catchUpBoost;
       }
 
       this.player.x = Math.min(this.arabi.x - 45, this.player.x + deltaSec * advanceRate);
     }
 
     // 4. Check if Player caught Arabi! (Responsive catch trigger)
-    if (!this.isGameOver && this.player.x >= this.arabi.x - 75 && this.arabiBoost < 100) {
+    if (!this.isGameOver && this.player.x >= this.arabi.x - 70 && this.arabiBoost < 100) {
       this.triggerPlayerCatch();
       return;
     }
@@ -805,14 +904,16 @@ export class GameScene extends Phaser.Scene {
     this.thrownToys.getChildren().forEach((child) => {
       const toy = child as Phaser.GameObjects.Sprite;
       const isDodged = toy.getData('dodged');
-      if (!isDodged && toy.x < this.player.x - 35) {
+      if (!isDodged && toy.x < this.player.x - 30) {
         toy.setData('dodged', true);
         // Clean dodge surge forward!
         if (!this.isStumbling) {
-          this.player.x = Math.min(this.arabi.x - 48, this.player.x + 95);
+          this.player.x = Math.min(this.arabi.x - 48, this.player.x + 65);
+          this.score += 50;
+          this.catchUpTimer = Math.max(this.catchUpTimer, 2.5);
 
           // Pop text
-          const dodgeText = this.add.text(this.player.x, this.player.y - 140, '✨ নাইস জাম্প! 💨', {
+          const dodgeText = this.add.text(this.player.x, this.player.y - 140, '✨ দারুণ জাম্প! +স্পিড! 🚀', {
             fontFamily: '"Hind Siliguri", sans-serif',
             fontSize: '20px',
             fontStyle: 'bold',
@@ -825,7 +926,7 @@ export class GameScene extends Phaser.Scene {
             targets: dodgeText,
             y: this.player.y - 190,
             alpha: 0,
-            duration: 650,
+            duration: 700,
             onComplete: () => dodgeText.destroy()
           });
 
@@ -928,7 +1029,8 @@ export class GameScene extends Phaser.Scene {
 
   public setMode(mode: GameMode) {
     this.gameMode = mode;
-    this.baseSpeed = mode === 'araf' ? 280 : mode === 'adiba' ? 320 : 360;
+    const cfg = this.characterConfig;
+    this.baseSpeed = cfg.baseSpeed;
     this.currentSpeed = this.baseSpeed;
 
     if (this.player) {
@@ -944,14 +1046,10 @@ export class GameScene extends Phaser.Scene {
           : mode === 'adiba'
           ? 'adiba-run'
           : 'anam-run';
-      const originY =
-        mode === 'araf'
-          ? 396 / 420
-          : mode === 'adiba'
-          ? 430 / 450
-          : 460 / 480;
+
       this.player.setTexture(sheet);
-      this.player.setOrigin(0.5, originY);
+      this.player.setScale(cfg.scale);
+      this.player.setOrigin(0.5, cfg.originY);
       this.player.play(anim);
 
       const shadowScaleX =

@@ -14,6 +14,7 @@ import { usePWAInstall } from './hooks/usePWAInstall';
 export const App: React.FC = () => {
   const [mode, setMode] = useState<GameMode>('araf');
   const [isModeModalOpen, setIsModeModalOpen] = useState<boolean>(true); // Open on first load
+  const [hasGameStarted, setHasGameStarted] = useState<boolean>(false);
   const [isGameOverModalOpen, setIsGameOverModalOpen] = useState<boolean>(false);
   const [gameOverWinner, setGameOverWinner] = useState<'player' | 'arabi'>('player');
   const [lastScore, setLastScore] = useState<number>(0);
@@ -100,10 +101,15 @@ export const App: React.FC = () => {
   const handleStartGame = () => {
     setIsGameOverModalOpen(false);
     setIsModeModalOpen(false);
+    setHasGameStarted(true);
     if (gameRef.current) {
       const scene = gameRef.current.scene.getScene('GameScene') as GameScene;
       if (scene) {
-        scene.startGame();
+        if (!hasGameStarted) {
+          scene.startGame();
+        } else {
+          scene.resumeGame();
+        }
       }
     }
   };
@@ -113,6 +119,7 @@ export const App: React.FC = () => {
     setGameState((prev) => ({ ...prev, mode: newMode }));
     setIsGameOverModalOpen(false);
     setIsModeModalOpen(false);
+    setHasGameStarted(true);
     if (gameRef.current) {
       const scene = gameRef.current.scene.getScene('GameScene') as GameScene;
       if (scene) {
@@ -125,6 +132,7 @@ export const App: React.FC = () => {
   const handleRestart = () => {
     setIsGameOverModalOpen(false);
     setIsModeModalOpen(false);
+    setHasGameStarted(true);
     if (gameRef.current) {
       const scene = gameRef.current.scene.getScene('GameScene') as GameScene;
       if (scene) {
@@ -140,6 +148,27 @@ export const App: React.FC = () => {
       const scene = gameRef.current.scene.getScene('GameScene') as GameScene;
       if (scene) {
         scene.setMode(newMode);
+      }
+    }
+  };
+
+  const handleOpenModeSelect = () => {
+    setIsModeModalOpen(true);
+    if (gameRef.current) {
+      const scene = gameRef.current.scene.getScene('GameScene') as GameScene;
+      if (scene) {
+        scene.pauseGame();
+      }
+    }
+  };
+
+  const handleJump = () => {
+    if (isModeModalOpen || isGameOverModalOpen) return;
+    SoundManager.getInstance().ensureContext();
+    if (gameRef.current) {
+      const scene = gameRef.current.scene.getScene('GameScene') as GameScene;
+      if (scene && typeof scene.playerJump === 'function') {
+        scene.playerJump();
       }
     }
   };
@@ -160,18 +189,14 @@ export const App: React.FC = () => {
       return;
     }
 
-    if (gameRef.current) {
-      const scene = gameRef.current.scene.getScene('GameScene') as GameScene;
-      if (scene && typeof scene.playerJump === 'function') {
-        scene.playerJump();
-      }
-    }
+    handleJump();
   };
 
   return (
     <div
       onPointerDown={handleScreenTap}
-      className="fixed inset-0 w-full h-full h-[100dvh] overflow-hidden bg-slate-950 font-bengali touch-none select-none"
+      className="fixed inset-0 w-full h-full h-[100dvh] overflow-hidden bg-slate-950 font-bengali touch-none select-none flex flex-col justify-between"
+      style={{ overscrollBehavior: 'none' }}
     >
       {/* Phaser Canvas */}
       <PhaserGame
@@ -188,8 +213,9 @@ export const App: React.FC = () => {
         highScore={highScore}
         isInstallable={isInstallable}
         onInstallClick={triggerInstall}
-        onOpenModeSelect={() => setIsModeModalOpen(true)}
+        onOpenModeSelect={handleOpenModeSelect}
         onRestart={handleRestart}
+        onJump={handleJump}
       />
 
       {/* Mode Select Modal */}

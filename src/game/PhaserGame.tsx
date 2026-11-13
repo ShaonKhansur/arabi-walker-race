@@ -62,6 +62,7 @@ export const PhaserGame: React.FC<PhaserGameProps> = ({ mode, onStateUpdate, onG
       }
       game.scene.start('GameScene', {
         mode,
+        autoStart: false,
         onStateUpdate: stableStateUpdate,
         onGameOver: stableGameOver,
       });
@@ -94,9 +95,7 @@ export const PhaserGame: React.FC<PhaserGameProps> = ({ mode, onStateUpdate, onG
       if (scene) {
         scene.setCallbacks(stableStateUpdate, stableGameOver);
         scene.setMode(mode);
-        if (scene.scene.isActive()) {
-          scene.restartGame();
-        }
+        // Only update character sprite and mode; DO NOT auto-restart or start running in background
       }
     }
   }, [mode]);
