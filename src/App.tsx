@@ -7,6 +7,7 @@ import { ModeSelectModal } from './components/ModeSelectModal';
 import { GameOverModal } from './components/GameOverModal';
 import { OrientationPrompt } from './components/OrientationPrompt';
 import { IOSInstallModal } from './components/IOSInstallModal';
+import { InAppBrowserGuideModal } from './components/InAppBrowserGuideModal';
 import { SoundManager } from './game/SoundManager';
 import { usePWAInstall } from './hooks/usePWAInstall';
 
@@ -20,7 +21,18 @@ export const App: React.FC = () => {
   const [highScore, setHighScore] = useState<number>(0);
   const [isNewHigh, setIsNewHigh] = useState<boolean>(false);
 
-  const { isInstallable, isInstalled, triggerInstall, showIOSGuide, setShowIOSGuide } = usePWAInstall();
+  const {
+    isInstallable,
+    isInstalled,
+    isIOS,
+    isInApp,
+    inAppBrowserName,
+    showIOSGuide,
+    setShowIOSGuide,
+    showInAppGuide,
+    setShowInAppGuide,
+    triggerInstall,
+  } = usePWAInstall();
 
   const [gameState, setGameState] = useState<GameStateUpdate>({
     score: 0,
@@ -213,13 +225,25 @@ export const App: React.FC = () => {
       <OrientationPrompt
         isInstallable={isInstallable}
         isInstalled={isInstalled}
+        isInApp={isInApp}
+        inAppBrowserName={inAppBrowserName}
+        isIOS={isIOS}
         onInstallClick={triggerInstall}
+        onOpenInAppGuide={() => setShowInAppGuide(true)}
       />
 
-      {/* iOS PWA Install Guide Modal */}
+      {/* iOS PWA Install Guide Modal (Safari) */}
       <IOSInstallModal
         isOpen={showIOSGuide}
         onClose={() => setShowIOSGuide(false)}
+      />
+
+      {/* In-App Browser (Messenger / Facebook / Instagram) Escape Guide */}
+      <InAppBrowserGuideModal
+        isOpen={showInAppGuide}
+        onClose={() => setShowInAppGuide(false)}
+        isIOS={isIOS}
+        browserName={inAppBrowserName}
       />
     </div>
   );
