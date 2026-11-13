@@ -24,11 +24,11 @@ export const ModeSelectModal: React.FC<ModeSelectModalProps> = ({
         <div className="absolute -top-24 -left-24 w-48 h-48 bg-sky-500/20 rounded-full blur-3xl pointer-events-none" />
         <div className="absolute -bottom-24 -right-24 w-48 h-48 bg-amber-500/20 rounded-full blur-3xl pointer-events-none" />
 
-        {/* 1. Main Game Banner (new-characters-sheet.jpeg) */}
+        {/* 1. Main Game Banner */}
         <div className="relative w-full h-32 md:h-44 rounded-2xl overflow-hidden mb-3.5 border-2 border-sky-400/40 shadow-xl group">
           <img
-            src="/assets/bg/new-characters-banner.jpg"
-            alt="আরাবি ওয়াকার রান - New Characters Banner"
+            src="/assets/bg/game-banner.jpg"
+            alt="আরাবি ওয়াকার রান - Game Banner"
             className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/30 to-transparent" />

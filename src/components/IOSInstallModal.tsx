@@ -76,3 +76,4 @@ export const IOSInstallModal: React.FC<IOSInstallModalProps> = ({ isOpen, onClos
     </div>
   );
 };
+
