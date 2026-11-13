@@ -6,7 +6,9 @@ import { HUDOverlay } from './components/HUDOverlay';
 import { ModeSelectModal } from './components/ModeSelectModal';
 import { GameOverModal } from './components/GameOverModal';
 import { OrientationPrompt } from './components/OrientationPrompt';
+import { IOSInstallModal } from './components/IOSInstallModal';
 import { SoundManager } from './game/SoundManager';
+import { usePWAInstall } from './hooks/usePWAInstall';
 
 export const App: React.FC = () => {
   const [mode, setMode] = useState<GameMode>('araf');
@@ -17,6 +19,8 @@ export const App: React.FC = () => {
   const [lastDistance, setLastDistance] = useState<number>(0);
   const [highScore, setHighScore] = useState<number>(0);
   const [isNewHigh, setIsNewHigh] = useState<boolean>(false);
+
+  const { isInstallable, triggerInstall, showIOSGuide, setShowIOSGuide } = usePWAInstall();
 
   const [gameState, setGameState] = useState<GameStateUpdate>({
     score: 0,
@@ -162,6 +166,8 @@ export const App: React.FC = () => {
         currentMode={mode}
         gameState={gameState}
         highScore={highScore}
+        isInstallable={isInstallable}
+        onInstallClick={triggerInstall}
         onOpenModeSelect={() => setIsModeModalOpen(true)}
         onRestart={handleRestart}
       />
@@ -170,6 +176,8 @@ export const App: React.FC = () => {
       {isModeModalOpen && (
         <ModeSelectModal
           currentMode={mode}
+          isInstallable={isInstallable}
+          onInstallClick={triggerInstall}
           onSelectMode={handleSelectMode}
           onClose={handleCloseModeModal}
         />
@@ -195,6 +203,12 @@ export const App: React.FC = () => {
 
       {/* Landscape Orientation Prompt on Mobile */}
       <OrientationPrompt />
+
+      {/* iOS PWA Install Guide Modal */}
+      <IOSInstallModal
+        isOpen={showIOSGuide}
+        onClose={() => setShowIOSGuide(false)}
+      />
     </div>
   );
 };

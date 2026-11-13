@@ -1,15 +1,19 @@
 import React from 'react';
 import { GameMode } from '../game/GameScene';
-import { Sparkles, Heart, Play, Zap } from 'lucide-react';
+import { Sparkles, Heart, Play, Zap, Download } from 'lucide-react';
 
 interface ModeSelectModalProps {
   currentMode: GameMode;
+  isInstallable?: boolean;
+  onInstallClick?: () => void;
   onSelectMode: (mode: GameMode) => void;
   onClose: () => void;
 }
 
 export const ModeSelectModal: React.FC<ModeSelectModalProps> = ({
   currentMode,
+  isInstallable,
+  onInstallClick,
   onSelectMode,
   onClose,
 }) => {
@@ -45,9 +49,40 @@ export const ModeSelectModal: React.FC<ModeSelectModalProps> = ({
             কে খেলবে? প্লেয়ার বেছে নিন
           </h2>
         </div>
-        <p className="text-slate-300 text-xs md:text-sm mb-4 font-medium">
+        <p className="text-slate-300 text-xs md:text-sm mb-3.5 font-medium">
           আরাবি সামনে ওয়াকার নিয়ে ছুটছে আর খেলনা ছুড়ছে! কে আরাবিকে ধরবে?
         </p>
+
+        {/* One-Tap PWA Install Banner */}
+        {isInstallable && (
+          <div
+            onClick={onInstallClick}
+            className="mb-4 p-2.5 sm:p-3 rounded-2xl bg-gradient-to-r from-amber-500/20 via-orange-500/20 to-rose-500/20 border border-amber-400/50 flex items-center justify-between cursor-pointer hover:brightness-110 active:scale-98 transition shadow-lg group"
+          >
+            <div className="flex items-center gap-2.5 text-left">
+              <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-gradient-to-tr from-amber-400 to-orange-500 flex items-center justify-center text-slate-950 font-bold shadow shrink-0">
+                <Download className="w-4 h-4 sm:w-5 sm:h-5 text-slate-950" />
+              </div>
+              <div>
+                <h4 className="text-xs sm:text-sm font-extrabold text-amber-300 flex items-center gap-1">
+                  <span>মোবাইলে এক-ট্যাপে ইনস্টল করুন! 📲</span>
+                </h4>
+                <p className="text-[11px] text-slate-300 hidden sm:block">
+                  ব্রাউজার ছাড়া সরাসরি ফুলস্ক্রিন অ্যাপের মতো খেলতে ফোনে ইনস্টল করুন।
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onInstallClick?.();
+              }}
+              className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 text-white font-extrabold text-xs shadow-md border border-amber-300 shrink-0 group-hover:scale-105 transition"
+            >
+              ইনস্টল
+            </button>
+          </div>
+        )}
 
         {/* 3 Mode Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-5 text-left">

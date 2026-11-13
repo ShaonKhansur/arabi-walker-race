@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { GameMode, GameStateUpdate } from '../game/GameScene';
 import { SoundManager } from '../game/SoundManager';
-import { Volume2, VolumeX, RotateCcw, Compass, Maximize, Minimize } from 'lucide-react';
+import { Volume2, VolumeX, RotateCcw, Compass, Maximize, Minimize, Download } from 'lucide-react';
 
 interface HUDOverlayProps {
   currentMode: GameMode;
   gameState: GameStateUpdate;
   highScore: number;
+  isInstallable?: boolean;
+  onInstallClick?: () => void;
   onOpenModeSelect: () => void;
   onRestart: () => void;
 }
@@ -15,6 +17,8 @@ export const HUDOverlay: React.FC<HUDOverlayProps> = ({
   currentMode,
   gameState,
   highScore,
+  isInstallable,
+  onInstallClick,
   onOpenModeSelect,
   onRestart,
 }) => {
@@ -148,6 +152,18 @@ export const HUDOverlay: React.FC<HUDOverlayProps> = ({
                 : '👦 প্লেয়ার: আনাম (১৩ বছর)'}
             </span>
           </button>
+
+          {/* One-Tap PWA Install Button */}
+          {isInstallable && (
+            <button
+              onClick={onInstallClick}
+              className="px-2.5 py-1.5 md:px-3.5 md:py-2 rounded-xl text-xs md:text-sm font-extrabold shadow-lg transition-all transform active:scale-95 flex items-center gap-1.5 bg-gradient-to-r from-amber-500 via-orange-500 to-rose-500 text-white border border-amber-300 shadow-orange-500/25 animate-pulse"
+              title="মোবাইলে এক-ট্যাপে ইনস্টল করুন"
+            >
+              <Download className="w-3.5 h-3.5" />
+              <span>📲 ইনস্টল</span>
+            </button>
+          )}
         </div>
 
         {/* Right Actions: Fullscreen, Sound & Restart */}
