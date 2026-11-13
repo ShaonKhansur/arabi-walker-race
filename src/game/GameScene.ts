@@ -34,8 +34,11 @@ export class GameScene extends Phaser.Scene {
   private totalRunDistance: number = 0;
   private arabiBoost: number = 0; // 0 to 100%
   private isGameOver: boolean = false;
+  private isGameStarted: boolean = false;
   private isStumbling: boolean = false;
   private catchUpTimer: number = 0; // Comeback speed surge after hit
+  private toyTimerEvent?: Phaser.Time.TimerEvent;
+  private milkTimerEvent?: Phaser.Time.TimerEvent;
 
   private jumpCount: number = 0;
   private maxJumps: number = 2; // double hop!
@@ -103,12 +106,14 @@ export class GameScene extends Phaser.Scene {
 
   public init(data?: {
     mode?: GameMode;
+    autoStart?: boolean;
     onStateUpdate?: (state: GameStateUpdate) => void;
     onGameOver?: (score: number, distance: number, winner: 'player' | 'arabi') => void;
   }) {
     if (data?.mode) this.gameMode = data.mode;
     if (data?.onStateUpdate) this.onStateUpdate = data.onStateUpdate;
     if (data?.onGameOver) this.onGameOver = data.onGameOver;
+    this.isGameStarted = data?.autoStart ?? false;
     this.score = 0;
     this.totalRunDistance = 0;
     this.arabiBoost = 0;
@@ -323,24 +328,6 @@ export class GameScene extends Phaser.Scene {
       this.playerJump();
     });
 
-    // 11. Spawners
-    // Arabi flings a toy backward periodically
-    const toyInterval = this.gameMode === 'araf' ? 2600 : 1850;
-    this.time.addEvent({
-      delay: toyInterval,
-      callback: this.flingToyFromArabi,
-      callbackScope: this,
-      loop: true
-    });
-
-    // Milk bottle spawns ahead for Arabi
-    this.time.addEvent({
-      delay: this.gameMode === 'araf' ? 4200 : 3500,
-      callback: this.spawnMilkForArabi,
-      callbackScope: this,
-      loop: true
-    });
-
     // 12. Particles
     this.emitterDust = this.add.particles(0, 0, 'dust-puff', {
       lifespan: { min: 250, max: 400 },
@@ -365,8 +352,52 @@ export class GameScene extends Phaser.Scene {
       emitting: false
     });
 
-    // Start background music
+    // Start active gameplay if requested, otherwise wait for player to tap start!
+    if (this.isGameStarted) {
+      this.startActiveGameplay();
+    } else {
+      if (this.onStateUpdate) {
+        this.onStateUpdate({
+          score: 0,
+          distance: 0,
+          distanceToArabi: 15,
+          arabiBoost: 0,
+          mode: this.gameMode,
+          speech: null
+        });
+      }
+    }
+  }
+
+  public startGame() {
+    if (this.isGameStarted) return;
+    this.isGameStarted = true;
+    this.startActiveGameplay();
+  }
+
+  private startActiveGameplay() {
+    SoundManager.getInstance().ensureContext();
     SoundManager.getInstance().startBGM();
+
+    // Arabi flings a toy backward periodically
+    if (this.toyTimerEvent) this.toyTimerEvent.destroy();
+    const toyInterval = this.gameMode === 'araf' ? 2600 : 1850;
+    this.toyTimerEvent = this.time.addEvent({
+      delay: toyInterval,
+      callback: this.flingToyFromArabi,
+      callbackScope: this,
+      loop: true
+    });
+
+    // Milk bottle spawns ahead for Arabi
+    if (this.milkTimerEvent) this.milkTimerEvent.destroy();
+    const milkInterval = this.gameMode === 'araf' ? 4200 : 3500;
+    this.milkTimerEvent = this.time.addEvent({
+      delay: milkInterval,
+      callback: this.spawnMilkForArabi,
+      callbackScope: this,
+      loop: true
+    });
 
     // Opening dialogue: Player calls out to Arabi to stop!
     const startQuote =
@@ -379,7 +410,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   public playerJump() {
-    if (this.isGameOver) return;
+    if (!this.isGameStarted || this.isGameOver) return;
     SoundManager.getInstance().ensureContext();
 
     if (this.jumpCount < this.maxJumps) {
@@ -691,7 +722,18 @@ export class GameScene extends Phaser.Scene {
   }
 
   public update(time: number, delta: number) {
-    if (this.isGameOver) return;
+    if (!this.isGameStarted || this.isGameOver) {
+      if (this.player && this.playerShadow) {
+        this.playerShadow.x = this.player.x;
+        this.playerShadow.y = this.floorY + 4;
+      }
+      if (this.arabi && this.arabiShadow) {
+        this.arabiShadow.x = this.arabi.x;
+        this.arabiShadow.y = this.floorY + 4;
+        this.arabi.angle = 0;
+      }
+      return;
+    }
 
     const deltaSec = delta / 1000;
 
@@ -888,11 +930,44 @@ export class GameScene extends Phaser.Scene {
     this.gameMode = mode;
     this.baseSpeed = mode === 'araf' ? 280 : mode === 'adiba' ? 320 : 360;
     this.currentSpeed = this.baseSpeed;
+
+    if (this.player) {
+      const sheet =
+        mode === 'araf'
+          ? 'araf-sheet'
+          : mode === 'adiba'
+          ? 'adiba-sheet'
+          : 'anam-sheet';
+      const anim =
+        mode === 'araf'
+          ? 'araf-run'
+          : mode === 'adiba'
+          ? 'adiba-run'
+          : 'anam-run';
+      const originY =
+        mode === 'araf'
+          ? 396 / 420
+          : mode === 'adiba'
+          ? 430 / 450
+          : 460 / 480;
+      this.player.setTexture(sheet);
+      this.player.setOrigin(0.5, originY);
+      this.player.play(anim);
+
+      const shadowScaleX =
+        mode === 'anam' ? 0.90 : mode === 'adiba' ? 0.82 : 0.75;
+      if (this.playerShadow) {
+        this.playerShadow.setScale(shadowScaleX, 0.38);
+      }
+    }
   }
 
-  public restartGame() {
+  public restartGame(autoStart: boolean = true) {
+    if (this.toyTimerEvent) this.toyTimerEvent.destroy();
+    if (this.milkTimerEvent) this.milkTimerEvent.destroy();
     this.scene.restart({
       mode: this.gameMode,
+      autoStart: autoStart,
       onStateUpdate: this.onStateUpdate,
       onGameOver: this.onGameOver
     });

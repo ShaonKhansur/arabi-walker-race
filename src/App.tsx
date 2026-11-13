@@ -20,7 +20,7 @@ export const App: React.FC = () => {
   const [highScore, setHighScore] = useState<number>(0);
   const [isNewHigh, setIsNewHigh] = useState<boolean>(false);
 
-  const { isInstallable, triggerInstall, showIOSGuide, setShowIOSGuide } = usePWAInstall();
+  const { isInstallable, isInstalled, triggerInstall, showIOSGuide, setShowIOSGuide } = usePWAInstall();
 
   const [gameState, setGameState] = useState<GameStateUpdate>({
     score: 0,
@@ -85,6 +85,17 @@ export const App: React.FC = () => {
     }));
   };
 
+  const handleStartGame = () => {
+    setIsGameOverModalOpen(false);
+    setIsModeModalOpen(false);
+    if (gameRef.current) {
+      const scene = gameRef.current.scene.getScene('GameScene') as GameScene;
+      if (scene) {
+        scene.startGame();
+      }
+    }
+  };
+
   const handleSelectModeAndRestart = (newMode: GameMode) => {
     setMode(newMode);
     setGameState((prev) => ({ ...prev, mode: newMode }));
@@ -94,17 +105,18 @@ export const App: React.FC = () => {
       const scene = gameRef.current.scene.getScene('GameScene') as GameScene;
       if (scene) {
         scene.setMode(newMode);
-        scene.restartGame();
+        scene.restartGame(true);
       }
     }
   };
 
   const handleRestart = () => {
     setIsGameOverModalOpen(false);
+    setIsModeModalOpen(false);
     if (gameRef.current) {
       const scene = gameRef.current.scene.getScene('GameScene') as GameScene;
       if (scene) {
-        scene.restartGame();
+        scene.restartGame(true);
       }
     }
   };
@@ -120,13 +132,9 @@ export const App: React.FC = () => {
     }
   };
 
-  const handleCloseModeModal = () => {
-    setIsModeModalOpen(false);
-    handleRestart();
-  };
-
   const handleScreenTap = (e: React.PointerEvent) => {
-    // Unlock Web Audio on first mobile touch (crucial for iOS Safari & Android Chrome)
+    // Only jump if game is started and modal is not open
+    if (isModeModalOpen || isGameOverModalOpen) return;
     SoundManager.getInstance().ensureContext();
 
     const target = e.target as HTMLElement | null;
@@ -179,7 +187,7 @@ export const App: React.FC = () => {
           isInstallable={isInstallable}
           onInstallClick={triggerInstall}
           onSelectMode={handleSelectMode}
-          onClose={handleCloseModeModal}
+          onClose={handleStartGame}
         />
       )}
 
@@ -202,7 +210,11 @@ export const App: React.FC = () => {
       )}
 
       {/* Landscape Orientation Prompt on Mobile */}
-      <OrientationPrompt />
+      <OrientationPrompt
+        isInstallable={isInstallable}
+        isInstalled={isInstalled}
+        onInstallClick={triggerInstall}
+      />
 
       {/* iOS PWA Install Guide Modal */}
       <IOSInstallModal
